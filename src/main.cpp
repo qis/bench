@@ -4,10 +4,10 @@
 #include <cstring>
 
 const auto str = []() {
-  std::string str;
-  str.resize(1024);
-  std::iota(str.begin(), str.end(), '\0');
-  return str;
+  std::string s;
+  s.resize(1024);
+  std::iota(s.begin(), s.end(), '\0');
+  return s;
 }();
 
 static void bench_copy(benchmark::State& state) {
@@ -38,4 +38,7 @@ static void bench_memcpy(benchmark::State& state) {
 BENCHMARK(bench_memcpy);
 
 
-BENCHMARK_MAIN();
+int main(int argc, char* argv[]) {
+  benchmark::Initialize(&argc, argv);
+  benchmark::RunSpecifiedBenchmarks();
+}
