@@ -1,44 +1,29 @@
-#include <algorithm>
-#include <numeric>
-#include <string>
-#include <cstring>
+#include <benchmark/benchmark.h>
+#include <ice/async.h>
+#include <ice/context.h>
 
-const auto str = []() {
-  std::string s;
-  s.resize(1024);
-  std::iota(s.begin(), s.end(), '\0');
-  return s;
-}();
-
-static void bench_copy(benchmark::State& state) {
-  std::vector<char> buffer;
-  buffer.resize(str.size() + 1);
+ice::task context_schedule_task(ice::context& context, benchmark::State& state, bool queue) {
   for (auto _ : state) {
-    std::copy(str.begin(), str.end(), buffer.begin());
+    co_await context.schedule(queue);
   }
+  context.stop();
 }
-BENCHMARK(bench_copy);
 
-static void bench_string_copy(benchmark::State& state) {
-  std::string buffer;
-  buffer.resize(str.size() + 1);
-  for (auto _ : state) {
-    buffer = str;
-  }
+static void context_schedule(benchmark::State& state) {
+  ice::context context;
+  context_schedule_task(context, state, false);
+  context.run();
 }
-BENCHMARK(bench_string_copy);
+BENCHMARK(context_schedule);
 
-static void bench_memcpy(benchmark::State& state) {
-  std::vector<char> buffer;
-  buffer.resize(str.size() + 1);
-  for (auto _ : state) {
-    std::memcpy(buffer.data(), str.data(), str.size());
-  }
+static void context_schedule_queue(benchmark::State& state) {
+  ice::context context;
+  context_schedule_task(context, state, true);
+  context.run();
 }
-BENCHMARK(bench_memcpy);
+BENCHMARK(context_schedule_queue);
 
-
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
 }
