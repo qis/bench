@@ -1,27 +1,23 @@
 #include <benchmark/benchmark.h>
-#include <ice/async.h>
-#include <ice/context.h>
+#include <bcrypt/bcrypt.h>
 
-ice::task context_schedule_task(ice::context& context, benchmark::State& state, bool queue) {
-  for (auto _ : state) {
-    co_await context.schedule(queue);
+const auto g_hash = bcrypt::hash("test");
+
+static void bcrypt_hash(benchmark::State& state) {
+  for (const auto _ : state) {
+    const auto hash = bcrypt::hash("test");
+    benchmark::DoNotOptimize(hash);
   }
-  context.stop();
 }
+BENCHMARK(bcrypt_hash)->Iterations(10)->Unit(benchmark::kMillisecond);
 
-static void context_schedule(benchmark::State& state) {
-  ice::context context;
-  context_schedule_task(context, state, false);
-  context.run();
+static void bcrypt_verify(benchmark::State& state) {
+  for (const auto _ : state) {
+    const auto ok = bcrypt::verify("test", g_hash);
+    benchmark::DoNotOptimize(ok);
+  }
 }
-BENCHMARK(context_schedule);
-
-static void context_schedule_queue(benchmark::State& state) {
-  ice::context context;
-  context_schedule_task(context, state, true);
-  context.run();
-}
-BENCHMARK(context_schedule_queue);
+BENCHMARK(bcrypt_verify)->Iterations(10)->Unit(benchmark::kMillisecond);
 
 int main(int argc, char** argv) {
   benchmark::Initialize(&argc, argv);
